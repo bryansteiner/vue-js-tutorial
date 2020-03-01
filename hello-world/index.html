@@ -7,11 +7,17 @@
   <script src='https://cdn.jsdelivr.net/npm/vue/dist/vue.js'></script>
   <!-- production version, optimized for size and speed -->
   <!-- <script src='https://cdn.jsdelivr.net/npm/vue'></script> -->
+  <!-- Since there is already a rich ecosystem of ajax libraries    -->
+  <!-- and collections of general-purpose utility methods, Vue core -->
+  <!-- is able to remain small by not reinventing them. This also   -->
+  <!-- gives you the freedom to use what you're familiar with.      -->
+  <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
 </head>
 
 <body>
 
-  <div id='app'>
+  <div id='app-1'>
     {{ message }}
   </div>
 
@@ -56,9 +62,27 @@
     </ol>
   </div>
 
+  <div id="app-8">
+    <p>Original message: "{{ message }}"</p>
+    <p>Computed reversed message: "{{ reversedMessage1 }}"</p>
+    <p>Method reversed message: "{{ reversedMessage2() }}"</p>
+  </div>
+
+  <div id="app-9">
+    {{ fullName }}
+  </div>
+
+  <div id="app-10">
+    <p>
+      Ask a yes/no question:
+      <input v-model="question">
+    </p>
+    <p>{{ answer }}</p>
+  </div>
+
   <script>
-    var app = new Vue({
-      el: '#app',
+    var app1 = new Vue({
+      el: '#app-1',
       data: {
         message: 'Hello Vue!'
       }
@@ -140,6 +164,94 @@
         ]
       }
     })
+
+
+    var app8 = new Vue({
+      el: '#app-8',
+      data: {
+        message: 'Hello'
+      },
+      // computed properties are cached based on their reactive dependencies
+      computed: {
+        // a computed getter
+        reversedMessage1: function() {
+          // `this` points to the vm instance
+          return this.message.split('').reverse().join('')
+        }
+      },
+      // methods are not
+      methods: {
+        reversedMessage2: function() {
+          return this.message.split('').reverse().join('')
+        }
+      }
+    })
+
+    var app9 = new Vue({
+      el: '#app-9',
+      data: {
+        firstName: 'Foo',
+        lastName: 'Bar'
+      },
+      computed: {
+        fullName: {
+          // getter
+          get: function() {
+            return this.firstName + ' ' + this.lastName
+          },
+          // setter
+          set: function(newValue) {
+            var names = newValue.split(' ')
+            this.firstName = names[0]
+            this.lastName = names[names.length - 1]
+          }
+        }
+      }
+    })
+
+
+    var app10 = new Vue({
+      el: '#app-10',
+      data: {
+        question: '',
+        answer: 'I cannot give you an answer until you ask a question!'
+      },
+      watch: {
+        // whenever question changes, this function will run
+        question: function(newQuestion, oldQuestion) {
+          this.answer = 'Waiting for you to stop typing...'
+          this.debouncedGetAnswer()
+        }
+      },
+      created: function() {
+        // _.debounce is a function provided by lodash to limit how
+        // often a particularly expensive operation can be run.
+        // In this case, we want to limit how often we access
+        // yesno.wtf/api, waiting until the user has completely
+        // finished typing before making the ajax request. To learn
+        // more about the _.debounce function (and its cousin
+        // _.throttle), visit: https://lodash.com/docs#debounce
+        this.debouncedGetAnswer = _.debounce(this.getAnswer, 500)
+      },
+      methods: {
+        getAnswer: function() {
+          if (this.question.indexOf('?') === -1) {
+            this.answer = 'Questions usually contain a question mark. ;-)'
+            return
+          }
+          this.answer = 'Thinking...'
+          var vm = this
+          axios.get('https://yesno.wtf/api')
+            .then(function(response) {
+              vm.answer = _.capitalize(response.data.answer)
+            })
+            .catch(function(error) {
+              vm.answer = 'Error! Could not reach the API. ' + error
+            })
+        }
+      }
+    })
+  </script>
   </script>
 
 
