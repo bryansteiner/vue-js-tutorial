@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>My first Vue app</title>
+  <!-- development version, includes helpful console warnings -->
+  <script src='https://cdn.jsdelivr.net/npm/vue/dist/vue.js'></script>
+  <!-- production version, optimized for size and speed -->
+  <!-- <script src='https://cdn.jsdelivr.net/npm/vue'></script> -->
+  <!-- Since there is already a rich ecosystem of ajax libraries    -->
+  <!-- and collections of general-purpose utility methods, Vue core -->
+  <!-- is able to remain small by not reinventing them. This also   -->
+  <!-- gives you the freedom to use what you're familiar with.      -->
+  <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+</head>
+
+<body>
+
+  <div id='app-1'>
+    {{ message }}
+  </div>
+
+  <div id='app-2'>
+    <span v-bind:title='message'>
+      Hover your mouse over me for a few seconds
+      to see my dynamically bound title!
+    </span>
+  </div>
+
+  <div id='app-3'>
+    <span v-if='seen'>Now you see me</span>
+  </div>
+
+  <div id='app-4'>
+    <ol>
+      <li v-for='todo in todos'>
+        {{ todo.text }}
+      </li>
+    </ol>
+  </div>
+
+  <div id='app-5'>
+    <p>{{ message }}</p>
+    <button v-on:click='reverseMessage'>Reverse Message</button>
+  </div>
+
+  <div id='app-6'>
+    <p>{{ message }}</p>
+    <input v-model='message'>
+  </div>
+
+  <div id="app-7">
+    <ol>
+      <!--
+      Now we provide each todo-item with the todo object
+      it's representing, so that its content can be dynamic.
+      We also need to provide each component with a "key",
+      which will be explained later.
+    -->
+      <todo-item v-for="item in groceryList" v-bind:todo="item" v-bind:key="item.id"></todo-item>
+    </ol>
+  </div>
+
+  <div id="app-8">
+    <p>Original message: "{{ message }}"</p>
+    <p>Computed reversed message: "{{ reversedMessage1 }}"</p>
+    <p>Method reversed message: "{{ reversedMessage2() }}"</p>
+  </div>
+
+  <div id="app-9">
+    {{ fullName }}
+  </div>
+
+  <div id="app-10">
+    <p>
+      Ask a yes/no question:
+      <input v-model="question">
+    </p>
+    <p>{{ answer }}</p>
+  </div>
+
+  <div id="app-11" v-bind:class="{ active: isActive, 'text-danger': hasError }"></div>
+
+  <div id="app-12" v-bind:class="classObject"></div>
+
+  <div id="app-13" v-bind:class="classObject"></div>
+
+  <div id="app-14" v-bind:class="[activeClass, errorClass]"></div>
+
+  <script>
+    var app14 = new Vue({
+      el: '#app-12',
+      data: {
+        activeClass: 'active',
+        errorClass: 'text-danger'
+      }
+    })
+
+    var app13 = new Vue({
+      el: '#app-13',
+      data: {
+        isActive: true,
+        error: null
+      },
+      computed: {
+        classObject: function() {
+          return {
+            active: this.isActive && !this.error,
+            'text-danger': this.error && this.error.type === 'fatal'
+          }
+        }
+      }
+    })
+
+    var app12 = new Vue({
+      el: '#app-12',
+      data: {
+        classObject: {
+          active: true,
+          'text-danger': false
+        }
+      }
+    })
+
+    var app11 = new Vue({
+      el: '#app-11',
+      data: {
+        isActive: true,
+        'text-danger': false
+      }
+    })
+
+    var app10 = new Vue({
+      el: '#app-10',
+      data: {
+        question: '',
+        answer: 'I cannot give you an answer until you ask a question!'
+      },
+      watch: {
+        // whenever question changes, this function will run
+        question: function(newQuestion, oldQuestion) {
+          this.answer = 'Waiting for you to stop typing...'
+          this.debouncedGetAnswer()
+        }
+      },
+      created: function() {
+        // _.debounce is a function provided by lodash to limit how
+        // often a particularly expensive operation can be run.
+        // In this case, we want to limit how often we access
+        // yesno.wtf/api, waiting until the user has completely
+        // finished typing before making the ajax request. To learn
+        // more about the _.debounce function (and its cousin
+        // _.throttle), visit: https://lodash.com/docs#debounce
+        this.debouncedGetAnswer = _.debounce(this.getAnswer, 500)
+      },
+      methods: {
+        getAnswer: function() {
+          if (this.question.indexOf('?') === -1) {
+            this.answer = 'Questions usually contain a question mark. ;-)'
+            return
+          }
+          this.answer = 'Thinking...'
+          var vm = this
+          axios.get('https://yesno.wtf/api')
+            .then(function(response) {
+              vm.answer = _.capitalize(response.data.answer)
+            })
+            .catch(function(error) {
+              vm.answer = 'Error! Could not reach the API. ' + error
+            })
+        }
+      }
+    })
+
+    var app9 = new Vue({
+      el: '#app-9',
+      data: {
+        firstName: 'Foo',
+        lastName: 'Bar'
+      },
+      computed: {
+        fullName: {
+          // getter
+          get: function() {
+            return this.firstName + ' ' + this.lastName
+          },
+          // setter
+          set: function(newValue) {
+            var names = newValue.split(' ')
+            this.firstName = names[0]
+            this.lastName = names[names.length - 1]
+          }
+        }
+      }
+    })
+
+    var app8 = new Vue({
+      el: '#app-8',
+      data: {
+        message: 'Hello'
+      },
+      // computed properties are cached based on their reactive dependencies
+      computed: {
+        // a computed getter
+        reversedMessage1: function() {
+          // `this` points to the vm instance
+          return this.message.split('').reverse().join('')
+        }
+      },
+      // methods are not
+      methods: {
+        reversedMessage2: function() {
+          return this.message.split('').reverse().join('')
+        }
+      }
+    })
+
+    // Define a new component called todo-item
+    Vue.component('todo-item', {
+      // The todo-item component now accepts a
+      // 'prop', which is like a custom attribute.
+      // This prop is called todo.
+      props: ['todo'],
+      template: '<li>{{ todo.text }}</li>'
+    })
+
+    var app7 = new Vue({
+      el: '#app-7',
+      data: {
+        groceryList: [{
+            id: 0,
+            text: 'Vegetables'
+          },
+          {
+            id: 1,
+            text: 'Cheese'
+          },
+          {
+            id: 2,
+            text: 'Whatever else humans are supposed to eat'
+          }
+        ]
+      }
+    })
+
+    var app6 = new Vue({
+      el: '#app-6',
+      data: {
+        message: 'Hello Vue!'
+      }
+    })
+
+    var app5 = new Vue({
+      el: '#app-5',
+      data: {
+        message: 'Hello Vue.js!'
+      },
+      methods: {
+        reverseMessage: function() {
+          this.message = this.message.split('').reverse().join('')
+        }
+      }
+    })
+
+    var app4 = new Vue({
+      el: '#app-4',
+      data: {
+        todos: [{
+            text: 'Learn Javascript'
+          },
+          {
+            text: 'Learn Vue'
+          },
+          {
+            text: 'Build something awesome'
+          }
+        ]
+      }
+    })
+
+    var app3 = new Vue({
+      el: '#app-3',
+      data: {
+        seen: true
+      }
+    })
+
+    var app2 = new Vue({
+      el: '#app-2',
+      data: {
+        message: 'You loaded this page on ' + new Date().toLocaleString()
+      }
+    })
+
+    var app1 = new Vue({
+      el: '#app-1',
+      data: {
+        message: 'Hello Vue!'
+      }
+    })
+  </script>
+</body>
+
+</html>
