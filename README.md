@@ -1,3 +1,4 @@
 # vuejs-tutorial
 
-[Tutorial: Intro to Vue.js](https://vuejs.org/v2/guide/)
+[Vue.js: The Progressive
+JavaScript Framework](https://vuejs.org/v2/guide/)
